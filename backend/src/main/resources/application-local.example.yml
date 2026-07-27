@@ -1,0 +1,16 @@
+server:
+  port: 8080
+
+mqtt:
+  host: your-emqx-host
+  port: 8883
+  tls: true
+  username: your-username
+  password: your-password
+
+vision:
+  working-directory: D:\esp\smart_streetlight
+  python-command: C:\Users\your-name\anaconda3\envs\yolov8-env\python.exe
+  # Or use conda:
+  # conda-env: yolov8-env
+  # conda-command: C:\Users\your-name\anaconda3\Scripts\conda.exe

@@ -1,0 +1,48 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: smart-streetlight-backend
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
+
+mqtt:
+  host: ${MQTT_HOST:}
+  port: ${MQTT_PORT:8883}
+  tls: ${MQTT_TLS:true}
+  username: ${MQTT_USERNAME:}
+  password: ${MQTT_PASSWORD:}
+  client-id: ${MQTT_CLIENT_ID:smart-streetlight-backend}
+  clean-session: true
+  connection-timeout-seconds: 10
+  keep-alive-seconds: 30
+  subscriptions:
+    - streetlight/+/telemetry
+    - streetlight/+/vision
+    - streetlight/+/fault
+    - streetlight/+/commandAck
+    - streetlight/+/deviceInfo
+
+vision:
+  working-directory: ${VISION_WORKING_DIRECTORY:..}
+  python-command: ${VISION_PYTHON_COMMAND:python}
+  conda-command: ${VISION_CONDA_COMMAND:conda}
+  conda-env: ${VISION_CONDA_ENV:}
+  model: ${VISION_MODEL:yolov8n.pt}
+  confidence: ${VISION_CONFIDENCE:0.35}
+  frame-stride: ${VISION_FRAME_STRIDE:15}
+  publish-interval-ms: ${VISION_PUBLISH_INTERVAL_MS:2000}
+  stable-window: ${VISION_STABLE_WINDOW:5}
+  occupied-min-hits: ${VISION_OCCUPIED_MIN_HITS:2}
+  empty-min-hits: ${VISION_EMPTY_MIN_HITS:4}
+  auto-pause-by-dark: ${VISION_AUTO_PAUSE_BY_DARK:true}
+  show-window: ${VISION_SHOW_WINDOW:false}

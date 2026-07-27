@@ -1,0 +1,41 @@
+menu "Smart Streetlight Configuration"
+
+    config SMART_STREETLIGHT_WIFI_SSID
+        string "WiFi SSID"
+        default ""
+        help
+            WiFi network name used by the ESP32-S3.
+
+    config SMART_STREETLIGHT_WIFI_PASSWORD
+        string "WiFi Password"
+        default ""
+        help
+            WiFi password used by the ESP32-S3.
+
+    config SMART_STREETLIGHT_MAXIMUM_RETRY
+        int "WiFi maximum retry"
+        default 8
+
+    config SMART_STREETLIGHT_DEVICE_ID
+        string "Device ID"
+        default "GLG-A-001"
+
+    config SMART_STREETLIGHT_MQTT_URI
+        string "EMQX MQTT URI"
+        default "mqtts://your-emqx-host:8883"
+
+    config SMART_STREETLIGHT_MQTT_USERNAME
+        string "EMQX MQTT Username"
+        default ""
+
+    config SMART_STREETLIGHT_MQTT_PASSWORD
+        string "EMQX MQTT Password"
+        default ""
+
+    config SMART_STREETLIGHT_LOCATION
+        string "Streetlight Location"
+        default "Demo Point A"
+        help
+            Human-readable location used in fault repair events.
+
+endmenu
