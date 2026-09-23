@@ -59,6 +59,12 @@ export interface VisionServiceStatus {
   recentLogs: string[];
 }
 
+export interface AuthSession {
+  authenticated: boolean;
+  username: string | null;
+  role: string | null;
+}
+
 function defaultApiBase(): string {
   if (typeof window !== "undefined" && window.location.hostname) {
     return `${window.location.protocol}//${window.location.hostname}:8080`;
@@ -69,13 +75,44 @@ function defaultApiBase(): string {
 export const API_BASE = (import.meta.env.VITE_API_BASE_URL || defaultApiBase()).replace(/\/$/, "");
 export const CAMERA_BASE = (import.meta.env.VITE_CAMERA_BASE_URL || "http://192.168.117.237").replace(/\/$/, "");
 
+let csrfToken: string | null = null;
+
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") {
+    return null;
+  }
+  const prefix = `${name}=`;
+  const value = document.cookie.split("; ").find((item) => item.startsWith(prefix))?.slice(prefix.length);
+  return value ? decodeURIComponent(value) : null;
+}
+
+export async function getCsrfToken(): Promise<string> {
+  const response = await fetch(`${API_BASE}/api/auth/csrf`, {
+    credentials: "same-origin",
+  });
+  if (!response.ok) {
+    throw new Error("无法初始化安全会话");
+  }
+  const body = (await response.json()) as { token: string };
+  csrfToken = body.token;
+  return body.token;
+}
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = (init?.method || "GET").toUpperCase();
+  const headers = new Headers(init?.headers);
+  if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
+    const token = csrfToken || getCookie("XSRF-TOKEN") || (await getCsrfToken());
+    headers.set("X-XSRF-TOKEN", token);
+  }
+  if (!headers.has("Content-Type") && method !== "GET" && method !== "HEAD") {
+    headers.set("Content-Type", "application/json");
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
+    credentials: "same-origin",
+    headers,
   });
 
   if (!response.ok) {
@@ -91,7 +128,25 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(message);
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
   return response.json() as Promise<T>;
+}
+
+export function getAuthSession(): Promise<AuthSession> {
+  return requestJson("/api/auth/session");
+}
+
+export function login(username: string, password: string): Promise<AuthSession> {
+  return requestJson("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ username, password }),
+  });
+}
+
+export function logout(): Promise<void> {
+  return requestJson("/api/auth/logout", { method: "POST" });
 }
 
 export function getMqttStatus(): Promise<{ connected: boolean }> {

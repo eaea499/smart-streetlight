@@ -95,6 +95,21 @@ h3 {
   flex-wrap: wrap;
 }
 
+.topbar-actions,
+.access-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.access-exit-button {
+  gap: 7px;
+  padding: 0 11px;
+  width: auto;
+}
+
 .status-pill {
   align-items: center;
   border-radius: 999px;
@@ -243,6 +258,205 @@ h3 {
   display: grid;
   gap: 18px;
   min-width: 0;
+}
+
+.access-shell {
+  align-items: center;
+  background: #eef2f7;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.access-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  max-width: 720px;
+  padding: 36px;
+  width: 100%;
+}
+
+.channel-card-shell {
+  max-width: 760px;
+}
+
+.access-card h1 {
+  color: #0f172a;
+  margin-top: 6px;
+}
+
+.access-lead {
+  color: var(--text-muted);
+  margin: 8px 0 26px;
+}
+
+.channel-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.channel-card {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: #172033;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 46px minmax(0, 1fr) 20px;
+  min-height: 118px;
+  padding: 16px;
+  text-align: left;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.channel-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+  transform: translateY(-1px);
+}
+
+.channel-card-admin:hover {
+  border-color: #c4b5fd;
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.1);
+}
+
+.channel-icon,
+.login-mark {
+  align-items: center;
+  border-radius: 10px;
+  display: inline-flex;
+  height: 46px;
+  justify-content: center;
+  width: 46px;
+}
+
+.guest-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.admin-icon,
+.login-mark {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.channel-card-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.channel-card-copy strong {
+  font-size: 1.02rem;
+}
+
+.channel-card-copy span {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.login-card {
+  max-width: 440px;
+}
+
+.login-card h1 {
+  margin-top: 12px;
+}
+
+.login-form {
+  display: grid;
+  gap: 9px;
+}
+
+.login-form label {
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin-top: 5px;
+}
+
+.login-form input {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: #172033;
+  min-height: 44px;
+  outline: none;
+  padding: 9px 12px;
+}
+
+.login-form input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.16);
+}
+
+.demo-hint {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 0.86rem;
+  margin: 6px 0 4px;
+  padding: 9px 10px;
+}
+
+.login-submit {
+  margin-top: 6px;
+  min-height: 46px;
+}
+
+.access-back-button {
+  background: transparent;
+  border: 0;
+  color: #64748b;
+  display: block;
+  font-size: 0.9rem;
+  margin: 18px auto 0;
+  padding: 4px 8px;
+}
+
+.access-back-button:hover {
+  color: #1d4ed8;
+}
+
+.access-loading {
+  align-items: center;
+  color: #475569;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.access-readonly-panel {
+  min-height: 240px;
+}
+
+.access-readonly-panel p {
+  color: #475569;
+  line-height: 1.7;
+  margin: 0 0 18px;
+}
+
+.access-readonly-list {
+  color: #334155;
+  display: grid;
+  gap: 11px;
+}
+
+.access-readonly-list span {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.access-readonly-list svg {
+  color: var(--green);
 }
 
 .device-header {
@@ -701,6 +915,25 @@ select {
   .device-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .topbar-actions,
+  .access-actions {
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .channel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .access-shell {
+    padding: 14px;
+  }
+
+  .access-card {
+    padding: 24px 18px;
   }
 
   h1 {

@@ -2,11 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
+  ArrowRight,
   Camera,
   CheckCircle2,
   Clock3,
   ExternalLink,
+  Eye,
   Gauge,
+  LogIn,
+  LogOut,
   Lightbulb,
   Loader2,
   Moon,
@@ -19,6 +23,7 @@ import {
   SlidersHorizontal,
   Square,
   Sun,
+  ShieldCheck,
   Users,
   Video,
   Wifi,
@@ -27,6 +32,7 @@ import {
 } from "lucide-react";
 import {
   API_BASE,
+  AuthSession,
   CAMERA_BASE,
   CommandPayload,
   DeviceEvent,
@@ -34,10 +40,13 @@ import {
   FaultEvent,
   getDevices,
   getFaults,
+  getAuthSession,
   getMqttStatus,
   getVisionServiceStatuses,
   publishBroadcastCommand,
   publishDeviceCommand,
+  login,
+  logout,
   startVisionService,
   stopVisionService,
   VisionServiceStatus,
@@ -262,7 +271,13 @@ function getVisionProcessTone(status: VisionServiceStatus | null): "neutral" | "
   return "neutral";
 }
 
-function App() {
+interface DashboardProps {
+  canControl: boolean;
+  authSession: AuthSession | null;
+  onLogout?: () => Promise<void>;
+}
+
+function Dashboard({ canControl, authSession, onLogout }: DashboardProps) {
   const [devices, setDevices] = useState<DeviceStateSnapshot[]>([]);
   const [faults, setFaults] = useState<FaultEvent[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("GLG-A-001");
@@ -506,6 +521,14 @@ function App() {
     return payload;
   }
 
+  async function handleExit() {
+    if (canControl && onLogout) {
+      await onLogout();
+      return;
+    }
+    window.location.assign(import.meta.env.BASE_URL);
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -513,15 +536,27 @@ function App() {
           <div className="eyebrow">Smart Streetlight</div>
           <h1>智能路灯管控台</h1>
         </div>
-        <div className="topbar-status">
-          <StatusPill tone={mqttConnected ? "good" : "danger"}>
-            {mqttConnected ? <Wifi size={16} /> : <WifiOff size={16} />}
-            MQTT {mqttConnected ? "已连接" : "未连接"}
-          </StatusPill>
-          <StatusPill tone={sseState === "connected" ? "good" : "warn"}>
-            <Radio size={16} />
-            SSE {sseState === "connected" ? "实时" : "重连中"}
-          </StatusPill>
+        <div className="topbar-actions">
+          <div className="topbar-status">
+            <StatusPill tone={mqttConnected ? "good" : "danger"}>
+              {mqttConnected ? <Wifi size={16} /> : <WifiOff size={16} />}
+              MQTT {mqttConnected ? "已连接" : "未连接"}
+            </StatusPill>
+            <StatusPill tone={sseState === "connected" ? "good" : "warn"}>
+              <Radio size={16} />
+              SSE {sseState === "connected" ? "实时" : "重连中"}
+            </StatusPill>
+          </div>
+          <div className="access-actions">
+            <StatusPill tone={canControl ? "info" : "neutral"}>
+              {canControl ? <ShieldCheck size={16} /> : <Eye size={16} />}
+              {canControl ? `管理员${authSession?.username ? ` · ${authSession.username}` : ""}` : "访客只读"}
+            </StatusPill>
+            <button className="small-icon-button access-exit-button" onClick={handleExit} aria-label={canControl ? "退出管理员通道" : "切换通道"}>
+              {canControl ? <LogOut size={17} /> : <ArrowRight size={17} />}
+              {canControl ? "退出" : "切换通道"}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -590,7 +625,8 @@ function App() {
           </div>
 
           <div className="workspace-grid">
-            <section className="panel control-panel">
+            {canControl ? (
+              <section className="panel control-panel">
               <div className="panel-heading">
                 <div>
                   <div className="eyebrow">Control</div>
@@ -656,7 +692,24 @@ function App() {
               </div>
 
               {(feedback || error) && <div className={`feedback ${error ? "error" : ""}`}>{error || feedback}</div>}
-            </section>
+              </section>
+            ) : (
+              <section className="panel access-readonly-panel">
+                <div className="panel-heading">
+                  <div>
+                    <div className="eyebrow">Guest access</div>
+                    <h3>访客只读模式</h3>
+                  </div>
+                  <Eye size={20} />
+                </div>
+                <p>当前通道仅用于查看设备状态、遥测数据和实时事件，不会发送任何控制命令。</p>
+                <div className="access-readonly-list">
+                  <span><CheckCircle2 size={16} />实时状态与设备在线情况</span>
+                  <span><CheckCircle2 size={16} />MQTT 与 SSE 连接状态</span>
+                  <span><CheckCircle2 size={16} />故障记录和视觉识别结果</span>
+                </div>
+              </section>
+            )}
 
             <section className="panel detail-panel">
               <div className="panel-heading">
@@ -696,14 +749,18 @@ function App() {
 
               <div className="camera-content">
                 <div className="camera-actions">
-                  <button className="primary-button" onClick={runVisionStart} disabled={!selectedDevice || !!busyAction || !!visionServiceStatus?.running}>
-                    <Play size={18} />
-                    启动检测
-                  </button>
-                  <button className="ghost-button" onClick={runVisionStop} disabled={!!busyAction || !visionServiceStatus?.running}>
-                    <Square size={18} />
-                    停止检测
-                  </button>
+                  {canControl && (
+                    <>
+                      <button className="primary-button" onClick={runVisionStart} disabled={!selectedDevice || !!busyAction || !!visionServiceStatus?.running}>
+                        <Play size={18} />
+                        启动检测
+                      </button>
+                      <button className="ghost-button" onClick={runVisionStop} disabled={!!busyAction || !visionServiceStatus?.running}>
+                        <Square size={18} />
+                        停止检测
+                      </button>
+                    </>
+                  )}
                   <button className="icon-button" onClick={() => openCameraPath("/capture")}>
                     <Camera size={18} />
                     打开快照
@@ -797,6 +854,157 @@ function App() {
       </section>
     </main>
   );
+}
+
+type AccessRoute = "selection" | "guest" | "admin";
+
+function getAccessRoute(pathname: string): AccessRoute {
+  const normalized = pathname.replace(/\/+$/, "");
+  if (normalized.endsWith("/guest")) {
+    return "guest";
+  }
+  if (normalized.endsWith("/admin")) {
+    return "admin";
+  }
+  return "selection";
+}
+
+function routePath(segment = ""): string {
+  const base = (import.meta.env.BASE_URL || "/").replace(/\/+$/, "");
+  return `${base}/${segment}`.replace(/\/+/g, "/");
+}
+
+function goToRoute(segment = "") {
+  window.history.pushState({}, "", routePath(segment));
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+function ChannelSelection() {
+  return (
+    <main className="access-shell">
+      <section className="access-card channel-card-shell">
+        <div className="eyebrow">Smart Streetlight</div>
+        <h1>智能路灯管控台</h1>
+        <p className="access-lead">选择访问通道</p>
+        <div className="channel-grid">
+          <button className="channel-card" onClick={() => goToRoute("guest")}>
+            <span className="channel-icon guest-icon"><Eye size={24} /></span>
+            <span className="channel-card-copy">
+              <strong>访客通道</strong>
+              <span>查看设备状态、遥测数据和实时事件</span>
+            </span>
+            <ArrowRight size={20} />
+          </button>
+          <button className="channel-card channel-card-admin" onClick={() => goToRoute("admin")}>
+            <span className="channel-icon admin-icon"><ShieldCheck size={24} /></span>
+            <span className="channel-card-copy">
+              <strong>管理员通道</strong>
+              <span>登录后使用路灯控制和视觉检测</span>
+            </span>
+            <ArrowRight size={20} />
+          </button>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function AdminLogin({ onAuthenticated }: { onAuthenticated: (session: AuthSession) => void }) {
+  const [username, setUsername] = useState("demo");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const session = await login(username.trim(), password);
+      onAuthenticated(session);
+    } catch (ex) {
+      setError(ex instanceof Error ? ex.message : "登录失败，请检查账号和密码");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="access-shell">
+      <section className="access-card login-card">
+        <div className="login-mark"><ShieldCheck size={24} /></div>
+        <div className="eyebrow">Admin access</div>
+        <h1>管理员通道</h1>
+        <p className="access-lead">登录后管理智能路灯设备</p>
+        <form className="login-form" onSubmit={submit}>
+          <label htmlFor="admin-username">用户名</label>
+          <input id="admin-username" value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" />
+          <label htmlFor="admin-password">密码</label>
+          <input id="admin-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder="请输入密码" />
+          <div className="demo-hint">演示账号：demo　密码：123456</div>
+          {error && <div className="feedback error">{error}</div>}
+          <button className="primary-button login-submit" type="submit" disabled={busy || !username.trim() || !password}>
+            {busy ? <Loader2 className="spin" size={18} /> : <LogIn size={18} />}
+            {busy ? "登录中" : "进入管理控制台"}
+          </button>
+        </form>
+        <button className="access-back-button" onClick={() => goToRoute("")}>返回通道选择</button>
+      </section>
+    </main>
+  );
+}
+
+function AdminGate() {
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    getAuthSession()
+      .then(setSession)
+      .catch(() => setSession({ authenticated: false, username: null, role: null }))
+      .finally(() => setChecking(false));
+  }, []);
+
+  if (checking) {
+    return (
+      <main className="access-shell">
+        <div className="access-loading"><Loader2 className="spin" size={22} />正在检查登录状态</div>
+      </main>
+    );
+  }
+
+  if (!session?.authenticated || session.role !== "ADMIN") {
+    return <AdminLogin onAuthenticated={setSession} />;
+  }
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } finally {
+      setSession({ authenticated: false, username: null, role: null });
+      goToRoute("admin");
+    }
+  }
+
+  return <Dashboard canControl authSession={session} onLogout={handleLogout} />;
+}
+
+function App() {
+  const [route, setRoute] = useState<AccessRoute>(() => getAccessRoute(window.location.pathname));
+
+  useEffect(() => {
+    const handlePopState = () => setRoute(getAccessRoute(window.location.pathname));
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  if (route === "selection") {
+    return <ChannelSelection />;
+  }
+  if (route === "guest") {
+    return <Dashboard canControl={false} authSession={null} />;
+  }
+  return <AdminGate />;
 }
 
 export default App;

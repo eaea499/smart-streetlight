@@ -23,6 +23,22 @@ $env:MQTT_PORT="8883"
 $env:MQTT_TLS="true"
 $env:MQTT_USERNAME="your-username"
 $env:MQTT_PASSWORD="your-password"
+$env:APP_AUTH_DEMO_USERNAME="demo"
+$env:APP_AUTH_DEMO_PASSWORD="your-demo-password"
+$env:SERVER_SERVLET_SESSION_COOKIE_SECURE="true"
+$env:SERVER_SERVLET_SESSION_COOKIE_HTTP_ONLY="true"
+$env:SERVER_SERVLET_SESSION_COOKIE_SAME_SITE="lax"
+```
+
+后端提供两个访问层级：访客可以读取 `GET /api/**` 数据，管理员登录后才能调用控制和视觉服务启停接口。演示密码只用于网站登录，不要与 MQTT 或服务器密码复用。
+
+认证接口：
+
+```text
+POST /api/auth/login
+POST /api/auth/logout
+GET  /api/auth/session
+GET  /api/auth/csrf
 ```
 
 如果要在前端点击按钮启动 YOLO 服务，还需要让后端知道使用哪个 Python 环境。推荐先在 Anaconda PowerShell Prompt 中查看 `yolov8-env` 的 Python 路径：

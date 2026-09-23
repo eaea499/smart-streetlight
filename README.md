@@ -285,6 +285,16 @@ POST /api/devices/{deviceId}/vision/stop
 POST /api/vision/stop
 ```
 
+### 公网 Web 访问模式
+
+前端提供两个访问通道：
+
+- `/esp32/`：通道选择页。
+- `/esp32/guest`：访客只读通道，可查看设备状态、遥测、故障和 SSE 实时事件。
+- `/esp32/admin`：管理员通道，登录后开放路灯控制和 YOLO 服务启停。
+
+后端通过 Spring Security 会话和 CSRF 防护限制写操作。访客即使直接请求控制接口，也不能发布 MQTT 命令。演示账号只用于网站登录，不与 MQTT 或服务器密码复用。
+
 单灯控制：
 
 ```http
