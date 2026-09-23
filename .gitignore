@@ -19,6 +19,7 @@
 # Build artifacts and directories
 **/build/
 build/
+release/
 *.o
 *.a
 *.out
