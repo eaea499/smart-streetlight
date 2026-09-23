@@ -1,85 +1,85 @@
-# Smart Streetlight Access Design
+# 智能路灯双通道访问设计
 
-## Goal
+## 目标
 
-Provide two clear access channels for the public smart streetlight console:
+为公网智能路灯控制台提供两个清晰的访问通道：
 
-- Guest channel: public, read-only, suitable for HR and project visitors.
-- Admin channel: login-protected, with real device and vision controls.
+- **访客通道**：公开访问，只读，适合 HR 和项目参观者。
+- **管理员通道**：登录后访问，可以使用真实设备控制和视觉检测功能。
 
-The demo account is intentionally visible on the admin login page so the deployed project can be demonstrated without a separate credential handoff. It is an application demo credential only and must never be reused for the server, MQTT broker, or other infrastructure.
+演示账号会在管理员登录页上明确展示，方便现场演示，不需要额外传递账号密码。该账号只用于网站演示，不能与服务器、MQTT 或其他基础设施共用。
 
-## User Experience
+## 页面与使用流程
 
-### Channel selection
+### 通道选择页
 
-`/esp32/` shows a concise channel selection page with two cards:
+访问 `/esp32/` 时显示简洁的通道选择页：
 
-- `访客通道`: opens `/esp32/guest`.
-- `管理员通道`: opens `/esp32/admin`.
+- **访客通道**：进入 `/esp32/guest`。
+- **管理员通道**：进入 `/esp32/admin`。
 
-The existing dashboard remains the visual foundation. No duplicate dashboard implementation is introduced.
+两个通道共用现有控制台组件，不复制两套仪表盘代码。
 
-### Guest channel
+### 访客通道
 
-`/esp32/guest` renders the dashboard in read-only mode. It may load:
+访问 `/esp32/guest` 不需要登录，显示只读仪表盘，可以查看：
 
-- MQTT connection status
-- Device list and online state
-- Telemetry, vision results, event history, and faults
-- SSE live updates
+- MQTT 连接状态
+- 设备列表和在线状态
+- 遥测数据、视觉识别结果、事件记录和故障记录
+- SSE 实时状态更新
 
-It must not render or call command publishing or vision start/stop actions.
+访客通道不显示也不调用路灯控制、批量控制和视觉服务启停功能。
 
-### Admin channel
+### 管理员通道
 
-`/esp32/admin` first renders a branded login panel. The panel displays the explicitly public demo credentials configured for this deployment. After successful login, the same dashboard renders in admin mode and enables existing control features.
+访问 `/esp32/admin` 时先显示网站内的登录页面，页面展示公开的演示账号信息。登录成功后进入同一套控制台，但开启管理员功能。
 
-Logout returns to the admin login panel. Unauthenticated access to admin-only API operations returns `401` or `403` and never publishes an MQTT command.
+退出登录后返回管理员登录页。未登录用户即使直接调用管理员接口，也必须收到 `401` 或 `403`，不能发布 MQTT 控制命令。
 
-## Backend Design
+## 后端设计
 
-Use Spring Security with a server-side session cookie:
+使用 Spring Security 和服务器端会话 Cookie：
 
-- Demo user is configured from server-only environment variables.
-- Password is not committed to source, frontend assets, or GitHub.
-- Session cookie is `HttpOnly`, `Secure`, and suitable for same-origin HTTPS requests.
-- Login, logout, current-session, and CSRF endpoints are under `/api/auth`.
-- All `GET /api/**` read endpoints remain available to guests.
-- Command publishing and vision start/stop endpoints require the `ADMIN` role.
-- Unknown methods and non-read API routes remain protected by default.
-- CSRF protection is enabled for state-changing requests.
+- 演示账号从服务器环境变量读取。
+- 密码不提交到源码、前端资源或 GitHub。
+- 会话 Cookie 设置为 `HttpOnly` 和 `Secure`，仅通过 HTTPS 使用。
+- 登录、退出、当前会话和 CSRF 接口统一放在 `/api/auth` 下。
+- 所有 `GET /api/**` 读取接口允许访客访问。
+- 路灯控制和视觉服务启动、停止接口要求 `ADMIN` 角色。
+- 未明确开放的接口默认需要管理员权限。
+- 对登录和其他写操作启用 CSRF 防护。
 
-The existing same-origin `/esp32-api` Nginx proxy remains unchanged. The frontend continues using the relative API base and browser session cookies.
+现有 Nginx `/esp32-api` 反向代理保持不变，前端继续使用同源 API 和浏览器会话 Cookie。
 
-## Frontend Design
+## 前端设计
 
-Add a small access-mode layer rather than duplicating the dashboard:
+增加轻量的访问模式层，不复制控制台：
 
-- Resolve mode from the `/esp32/`, `/esp32/guest`, and `/esp32/admin` paths.
-- Keep dashboard data loading and SSE behavior shared.
-- Gate control and vision action components by the resolved authenticated role.
-- Add login, logout, authentication error, loading, and expired-session states.
-- On a `401` from an admin action, return to the admin login panel with a concise message.
-- Keep guest controls absent from the DOM where practical; backend authorization remains the source of truth.
+- 根据 `/esp32/`、`/esp32/guest`、`/esp32/admin` 判断当前页面模式。
+- 访客和管理员共用数据加载、布局和 SSE 逻辑。
+- 根据当前角色控制按钮和操作区的显示。
+- 增加登录中、登录失败、会话过期和退出登录状态。
+- 管理员操作返回 `401` 时，回到登录页并显示简洁提示。
+- 访客模式尽量不渲染控制按钮，但真正的权限限制以后端为准。
 
-## Verification
+## 验证标准
 
-Automated backend tests must cover:
+后端自动测试需要覆盖：
 
-- Guest can read device and event data.
-- Guest cannot publish a device or batch command.
-- Guest cannot start or stop a vision service.
-- Valid demo credentials create an authenticated admin session.
-- Invalid credentials are rejected.
-- An authenticated admin can access protected operations.
+- 访客可以读取设备和事件数据。
+- 访客不能发布单设备或批量控制命令。
+- 访客不能启动或停止视觉服务。
+- 正确的演示账号可以创建管理员会话。
+- 错误密码会被拒绝。
+- 已登录管理员可以访问受保护接口。
 
-Manual deployment verification must cover:
+部署后手动验证：
 
-1. `/esp32/` shows both channels.
-2. Guest channel loads telemetry and SSE without login.
-3. Admin channel requires login and shows controls only after login.
-4. Guest direct requests to command endpoints fail with `401` or `403`.
-5. Admin control still reaches the device and receives the existing acknowledgement.
-6. Logout removes access to protected operations.
-7. Restarting the backend preserves the configured demo account and MQTT connection.
+1. `/esp32/` 显示两个通道。
+2. 访客通道无需登录即可加载数据和 SSE。
+3. 管理员通道需要登录，登录后才显示控制功能。
+4. 访客直接请求控制接口时返回 `401` 或 `403`。
+5. 管理员控制仍能到达设备并收到原有确认消息。
+6. 退出登录后不能继续使用受保护操作。
+7. 重启后端后，演示账号和 MQTT 连接仍能正常工作。
