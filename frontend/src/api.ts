@@ -72,7 +72,10 @@ function defaultApiBase(): string {
   return "http://localhost:8080";
 }
 
-export const API_BASE = (import.meta.env.VITE_API_BASE_URL || defaultApiBase()).replace(/\/$/, "");
+const configuredApiBase = import.meta.env.VITE_API_BASE_URL;
+const productionApiBase = import.meta.env.PROD ? "/esp32-api" : defaultApiBase();
+
+export const API_BASE = (configuredApiBase || productionApiBase).replace(/\/$/, "");
 export const CAMERA_BASE = (import.meta.env.VITE_CAMERA_BASE_URL || "http://192.168.117.237").replace(/\/$/, "");
 
 let csrfToken: string | null = null;

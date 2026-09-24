@@ -5,7 +5,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
 
   return {
-    base: env.VITE_BASE_PATH || "/",
+    // The public console is mounted below the personal site, not at its root.
+    base: env.VITE_BASE_PATH || (mode === "production" ? "/esp32/" : "/"),
     plugins: [react()],
     server: {
       port: 5173,

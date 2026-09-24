@@ -1,4 +1,4 @@
-const CACHE_NAME = "smart-streetlight-ui-v2-access-channels";
+const CACHE_NAME = "smart-streetlight-ui-v3-network-navigation";
 const BASE_PATH = new URL(".", self.registration.scope).pathname;
 const APP_SHELL = [BASE_PATH, `${BASE_PATH}manifest.webmanifest`, `${BASE_PATH}icon.svg`];
 
@@ -20,6 +20,13 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET" || request.url.includes("/api/")) {
+    return;
+  }
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(BASE_PATH))
+    );
     return;
   }
 

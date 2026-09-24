@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Eye,
   Gauge,
+  Home,
   LogIn,
   LogOut,
   Lightbulb,
@@ -391,6 +392,12 @@ function Dashboard({ canControl, authSession, onLogout }: DashboardProps) {
   useEffect(() => {
     let cancelled = false;
 
+    if (!canControl) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
     function refreshVisionServiceStatus() {
       getVisionServiceStatuses()
         .then((statuses) => {
@@ -411,7 +418,7 @@ function Dashboard({ canControl, authSession, onLogout }: DashboardProps) {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, []);
+  }, [canControl]);
 
   useEffect(() => {
     if (currentBrightness >= 0 && currentBrightness <= 100) {
@@ -529,6 +536,10 @@ function Dashboard({ canControl, authSession, onLogout }: DashboardProps) {
     window.location.assign(import.meta.env.BASE_URL);
   }
 
+  function returnToPersonalSite() {
+    window.location.assign("/");
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -552,9 +563,13 @@ function Dashboard({ canControl, authSession, onLogout }: DashboardProps) {
               {canControl ? <ShieldCheck size={16} /> : <Eye size={16} />}
               {canControl ? `管理员${authSession?.username ? ` · ${authSession.username}` : ""}` : "访客只读"}
             </StatusPill>
-            <button className="small-icon-button access-exit-button" onClick={handleExit} aria-label={canControl ? "退出管理员通道" : "切换通道"}>
+            <button className="access-exit-button" onClick={handleExit}>
               {canControl ? <LogOut size={17} /> : <ArrowRight size={17} />}
               {canControl ? "退出" : "切换通道"}
+            </button>
+            <button className="access-exit-button access-home-button" onClick={returnToPersonalSite}>
+              <Home size={17} />
+              返回个人空间
             </button>
           </div>
         </div>
@@ -738,62 +753,62 @@ function Dashboard({ canControl, authSession, onLogout }: DashboardProps) {
             <section className="panel camera-panel">
               <div className="panel-heading">
                 <div>
-                  <div className="eyebrow">Camera</div>
-                  <h3>摄像头与 YOLO</h3>
+                  <div className="eyebrow">Vision</div>
+                  <h3>{canControl ? "摄像头与 YOLO" : "视觉识别摘要"}</h3>
                 </div>
                 <StatusPill tone={yoloStatus.pillTone}>
-                  <Camera size={16} />
+                  {canControl ? <Camera size={16} /> : <Users size={16} />}
                   {yoloStatus.label}
                 </StatusPill>
               </div>
 
               <div className="camera-content">
-                <div className="camera-actions">
-                  {canControl && (
-                    <>
-                      <button className="primary-button" onClick={runVisionStart} disabled={!selectedDevice || !!busyAction || !!visionServiceStatus?.running}>
-                        <Play size={18} />
-                        启动检测
-                      </button>
-                      <button className="ghost-button" onClick={runVisionStop} disabled={!!busyAction || !visionServiceStatus?.running}>
-                        <Square size={18} />
-                        停止检测
-                      </button>
-                    </>
-                  )}
-                  <button className="icon-button" onClick={() => openCameraPath("/capture")}>
-                    <Camera size={18} />
-                    打开快照
-                  </button>
-                  <button className="icon-button" onClick={() => openCameraPath("/stream")}>
-                    <Video size={18} />
-                    打开实时流
-                  </button>
-                  <button className="icon-button" onClick={() => openCameraPath("/")}>
-                    <ExternalLink size={18} />
-                    摄像头首页
-                  </button>
-                </div>
+                {canControl && <div className="camera-admin-tools">
+                  <div className="camera-actions">
+                    <button className="primary-button" onClick={runVisionStart} disabled={!selectedDevice || !!busyAction || !!visionServiceStatus?.running}>
+                      <Play size={18} />
+                      启动检测
+                    </button>
+                    <button className="ghost-button" onClick={runVisionStop} disabled={!!busyAction || !visionServiceStatus?.running}>
+                      <Square size={18} />
+                      停止检测
+                    </button>
+                    <button className="icon-button" onClick={() => openCameraPath("/capture")}>
+                      <Camera size={18} />
+                      打开快照
+                    </button>
+                    <button className="icon-button" onClick={() => openCameraPath("/stream")}>
+                      <Video size={18} />
+                      打开实时流
+                    </button>
+                    <button className="icon-button" onClick={() => openCameraPath("/")}>
+                      <ExternalLink size={18} />
+                      摄像头首页
+                    </button>
+                  </div>
+                </div>}
 
                 <div className="yolo-summary">
-                  <div className="vision-process-card">
-                    <div className="vision-process-line">
-                      <StatusPill tone={visionProcessTone}>
-                        {visionServiceStatus?.running ? <Loader2 className="spin" size={16} /> : <Radio size={16} />}
-                        {getVisionProcessLabel(visionServiceStatus)}
-                      </StatusPill>
-                      <span>{visionServiceStatus?.message ?? "等待后端状态"}</span>
+                  {canControl && <div className="camera-internal-details">
+                    <div className="vision-process-card">
+                      <div className="vision-process-line">
+                        <StatusPill tone={visionProcessTone}>
+                          {visionServiceStatus?.running ? <Loader2 className="spin" size={16} /> : <Radio size={16} />}
+                          {getVisionProcessLabel(visionServiceStatus)}
+                        </StatusPill>
+                        <span>{visionServiceStatus?.message ?? "等待后端状态"}</span>
+                      </div>
+                      {visionServiceStatus?.source && <div className="vision-process-source">检测源 {visionServiceStatus.source}</div>}
+                      {latestVisionLog && <div className="vision-log-line">最近日志 {latestVisionLog}</div>}
+                      {(visionFeedback || visionError) && <div className={`feedback compact-feedback ${visionError ? "error" : ""}`}>{visionError || visionFeedback}</div>}
                     </div>
-                    {visionServiceStatus?.source && <div className="vision-process-source">检测源 {visionServiceStatus.source}</div>}
-                    {latestVisionLog && <div className="vision-log-line">最近日志 {latestVisionLog}</div>}
-                    {(visionFeedback || visionError) && <div className={`feedback compact-feedback ${visionError ? "error" : ""}`}>{visionError || visionFeedback}</div>}
-                  </div>
+                  </div>}
                   <div className="yolo-status-line">
                     <StatusPill tone={yoloStatus.pillTone}>
                       <Radio size={16} />
                       {yoloStatus.description}
                     </StatusPill>
-                    <span>视频源 {cameraBase}</span>
+                    {canControl && <span>视频源 {cameraBase}</span>}
                   </div>
                   <div className="camera-detail-grid">
                     <span>peopleCount</span>
@@ -805,7 +820,7 @@ function Dashboard({ canControl, authSession, onLogout }: DashboardProps) {
                     <span>confidence</span>
                     <strong>{visionConfidence.toFixed(3)}</strong>
                   </div>
-                  <p className="camera-note">实时流会占用 ESP32-S3-CAM /stream；运行 YOLO 时建议只打开快照。</p>
+                  <p className="camera-note">{canControl ? "实时流会占用 ESP32-S3-CAM /stream；运行 YOLO 时建议只打开快照。" : "当前页面仅展示视觉识别结果，不开放摄像头访问和检测服务控制。"}</p>
                 </div>
               </div>
             </section>
@@ -904,6 +919,9 @@ function ChannelSelection() {
             <ArrowRight size={20} />
           </button>
         </div>
+        <a className="access-back-button access-site-link" href="/">
+          <Home size={16} />返回个人空间
+        </a>
       </section>
     </main>
   );

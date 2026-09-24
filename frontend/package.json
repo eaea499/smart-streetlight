@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
+    "test:guest-privacy": "node scripts/assert-guest-privacy.mjs",
+    "test:sw": "node scripts/assert-service-worker.mjs",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

@@ -104,10 +104,39 @@ h3 {
   justify-content: flex-end;
 }
 
+.topbar-actions {
+  flex: 0 0 auto;
+}
+
+.access-actions {
+  flex: 0 0 auto;
+}
+
 .access-exit-button {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: #334155;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.88rem;
+  font-weight: 800;
   gap: 7px;
+  justify-content: center;
+  min-height: 38px;
+  min-width: 82px;
   padding: 0 11px;
-  width: auto;
+  white-space: nowrap;
+}
+
+.access-exit-button:hover {
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.access-home-button {
+  min-width: 128px;
 }
 
 .status-pill {
@@ -420,6 +449,14 @@ h3 {
   font-size: 0.9rem;
   margin: 18px auto 0;
   padding: 4px 8px;
+}
+
+.access-site-link {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .access-back-button:hover {
