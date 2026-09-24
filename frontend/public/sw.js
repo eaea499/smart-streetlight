@@ -1,4 +1,4 @@
-const CACHE_NAME = "smart-streetlight-ui-v3-network-navigation";
+const CACHE_NAME = "smart-streetlight-ui-v4-network-navigation";
 const BASE_PATH = new URL(".", self.registration.scope).pathname;
 const APP_SHELL = [BASE_PATH, `${BASE_PATH}manifest.webmanifest`, `${BASE_PATH}icon.svg`];
 
@@ -31,8 +31,14 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      return cached || fetch(request);
-    })
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
   );
 });

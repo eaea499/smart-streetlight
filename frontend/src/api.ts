@@ -80,6 +80,13 @@ export const CAMERA_BASE = (import.meta.env.VITE_CAMERA_BASE_URL || "http://192.
 
 let csrfToken: string | null = null;
 
+function clearCsrfState(): void {
+  csrfToken = null;
+  if (typeof document !== "undefined") {
+    document.cookie = "XSRF-TOKEN=; Max-Age=0; path=/";
+  }
+}
+
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") {
     return null;
@@ -102,6 +109,10 @@ export async function getCsrfToken(): Promise<string> {
 }
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  return requestJsonWithRetry<T>(path, init, false);
+}
+
+async function requestJsonWithRetry<T>(path: string, init: RequestInit | undefined, retried: boolean): Promise<T> {
   const method = (init?.method || "GET").toUpperCase();
   const headers = new Headers(init?.headers);
   if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
@@ -117,6 +128,14 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     credentials: "same-origin",
     headers,
   });
+
+  const shouldRefreshCsrf = response.status === 401
+    || (path === "/api/auth/login" && response.status === 403);
+  if (shouldRefreshCsrf && method !== "GET" && method !== "HEAD" && !retried) {
+    clearCsrfState();
+    await getCsrfToken();
+    return requestJsonWithRetry<T>(path, init, true);
+  }
 
   if (!response.ok) {
     let message = `${response.status} ${response.statusText}`;
@@ -148,8 +167,12 @@ export function login(username: string, password: string): Promise<AuthSession> 
   });
 }
 
-export function logout(): Promise<void> {
-  return requestJson("/api/auth/logout", { method: "POST" });
+export async function logout(): Promise<void> {
+  try {
+    await requestJson("/api/auth/logout", { method: "POST" });
+  } finally {
+    clearCsrfState();
+  }
 }
 
 export function getMqttStatus(): Promise<{ connected: boolean }> {

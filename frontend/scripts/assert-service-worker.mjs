@@ -6,7 +6,7 @@ if (!source.includes('request.mode === "navigate"')) {
   throw new Error("Navigation requests must be fetched from the network before using the cache.");
 }
 
-if (!source.includes("smart-streetlight-ui-v3")) {
+if (!source.includes("smart-streetlight-ui-v4")) {
   throw new Error("The service worker cache version must advance when the app shell changes.");
 }
 
